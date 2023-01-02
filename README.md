@@ -4,10 +4,10 @@
 
 I was tired of writing the same log functions for my bash scripts.
 
-
 ## Getting started
 
 `log4bash` is a one file library, you can just source and start using it as follow:
+
 ```shell
 set -euo pipefail
 
