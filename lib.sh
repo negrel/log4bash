@@ -156,3 +156,7 @@ _stacktrace() {
 		((frame++))
 	done
 }
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+	printf 'source %s' "$0"
+fi
