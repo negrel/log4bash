@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
 # Log level
-: ${LOG_LEVEL="info"}
+: "${LOG_LEVEL="info"}"
 # Default log level if empty
 # calling log functions
-: ${LOG_LEVEL_DEFAULT="info"}
+: "${LOG_LEVEL_DEFAULT="info"}"
 # Log output file
-: ${LOG_OUTPUT="/dev/stderr"}
+: "${LOG_OUTPUT="/dev/stderr"}"
 # prefix called for each log
-: ${LOG_PREFIX="log_prefix"}
+: "${LOG_PREFIX="log_prefix"}"
 # Exit code used by log at fatal level
-: ${LOG_FATAL_EXIT_CODE="1"}
+: "${LOG_FATAL_EXIT_CODE="1"}"
 
 # Log levels
 declare -A _log_level
@@ -79,7 +79,7 @@ _log_pipe() {
 _log() {
 	# Detect errexit
 	local errexit="n"
-	if [[ "$-" == *e* ]]; then 
+	if [[ "$-" == *e* ]]; then
 		set +e
 		errexit="y"
 	fi
@@ -88,16 +88,22 @@ _log() {
 	prefix="$($LOG_PREFIX "$@")"
 	shift $?
 
-	printf "%s %s\n" "$prefix" "$*" >>"$LOG_OUTPUT"
+	printf "%s %s\n" "$prefix" "$*" >> "$LOG_OUTPUT"
 
-	# Restitute errexit
+	# Restore errexit
 	test "$errexit" = "y" && set -e
 }
 
 log_prefix() {
-	local date="$(date -Iseconds)"
+	local now
+	now="$(date -Iseconds)"
 	local level="${1:-"$LOG_LEVEL_DEFAULT"}"
 	local level_color="${_log_level_color[$level]:-}"
+
+	# Disable level color if output isn't a tty.
+	if [ ! -c "$LOG_OUTPUT" ]; then
+		level_color=""
+	fi
 
 	local color=""
 	local end_color=""
@@ -106,7 +112,7 @@ log_prefix() {
 		end_color="\033[0m"
 	fi
 
-	printf "${color}$date [$level] -$end_color"
+	echo -e "${color}$now [$level] -$end_color"
 
 	# We return one as we consumed one parameter
 	return 1
@@ -134,7 +140,7 @@ log_error() {
 
 log_fatal() {
 	log "fatal" "$*"
-	exit $LOG_FATAL_EXIT_CODE
+	exit "$LOG_FATAL_EXIT_CODE"
 }
 
 log_panic() {
@@ -145,7 +151,7 @@ log_panic() {
 
 _stacktrace() {
 	local frame=0 LINE SUB FILE
-	while read LINE SUB FILE < <(caller "$frame"); do
+	while read -r LINE SUB FILE < <(caller "$frame"); do
 		printf "\t\033[${_log_color[red]}m%s()\n\t\t%s:%s\033[0m\n" "$SUB" "$FILE" "$LINE" &>>"$LOG_OUTPUT"
 		((frame++))
 	done
